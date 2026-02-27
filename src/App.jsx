@@ -10,21 +10,24 @@ function App() {
     fetchMessages();
   }, []);
 
-  async function fetchMessages() {
-    try {
-      const res = await fetch("https://eo661vj7bmus6pf.m.pipedream.net");
-      const data = await res.json();
+async function fetchMessages() {
+  try {
+    const res = await fetch("https://eo661vj7bmus6pf.m.pipedream.net");
+    const text = await res.text();
 
-      const msgs = data.messages || [];
-      setMessages(msgs);
+    console.log("RAW RESPONSE:", text);
 
-      const uniqueUsers = [...new Set(msgs.map((m) => m.wa_id))];
-      setUsers(uniqueUsers);
+    const data = JSON.parse(text);
+    const msgs = data.messages || [];
 
-    } catch (err) {
-      console.error("Fetch error:", err);
-    }
+    setMessages(msgs);
+    const uniqueUsers = [...new Set(msgs.map(m => m.wa_id))];
+    setUsers(uniqueUsers);
+
+  } catch (err) {
+    console.error("Fetch error:", err);
   }
+}
 
   const filteredMessages = messages.filter(
     (m) => m.wa_id === activeUser
