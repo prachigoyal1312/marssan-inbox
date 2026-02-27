@@ -12,7 +12,7 @@ function App() {
 
   async function fetchMessages() {
     try {
-      const res = await fetch("https://eocegw4zoij5b5q.m.pipedream.net");
+      const res = await fetch("https://eo661vj7bmus6pf.m.pipedream.net");
       const data = await res.json();
 
       const msgs = data.messages || [];
