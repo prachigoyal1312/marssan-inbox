@@ -1,46 +1,39 @@
 import { useEffect, useState } from "react";
-import "./App.css";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  "https://pdglfbjwawzdyhzbefyp.supabase.co",
+  "sb_publishable_HiCiRjvVBhY-w1UfpIQR1g_0gycok1J"
+);
 
 function App() {
   const [messages, setMessages] = useState([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchMessages();
   }, []);
 
   const fetchMessages = async () => {
-    try {
-      const res = await fetch("/api/get-messages");   // 👈 IMPORTANT CHANGE
-      const data = await res.json();
+    const { data, error } = await supabase
+      .from("messages")
+      .select("*")
+      .order("created_at", { ascending: true });
 
-      console.log("API DATA:", data);
-
-      if (res.ok) {
-        setMessages(data.messages || []);
-      } else {
-        console.error("API Error:", data);
-      }
-
-    } catch (err) {
-      console.error("Fetch error:", err);
-    } finally {
-      setLoading(false);
+    if (error) {
+      console.error(error);
+    } else {
+      setMessages(data);
     }
   };
 
   return (
-    <div style={{ padding: "20px" }}>
+    <div style={{ padding: 20 }}>
       <h1>Marssan Inbox</h1>
 
-      {loading && <p>Loading...</p>}
-
-      {!loading && messages.length === 0 && (
-        <p>No messages found</p>
-      )}
+      {messages.length === 0 && <p>No messages found</p>}
 
       {messages.map((msg) => (
-        <div key={msg.id} style={{ marginBottom: "10px" }}>
+        <div key={msg.id}>
           <p>{msg.content}</p>
         </div>
       ))}
