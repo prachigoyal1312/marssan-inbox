@@ -23,43 +23,52 @@ function App() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+const INCOMING_SHEET = "14_FLPsuzbadnQyuS__itpVO2tHWUQcrHXuXOpY5K-4A";
+const OUTGOING_SHEET = "1vj6Xi6e9RJ6d5lpvg7TguzYe6cj0O3TlzFKgvdDSwNM";
+
 const fetchSheet = async () => {
   try {
-    const res = await fetch(
-      `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`
-    );
 
-    const text = await res.text();
-    const json = JSON.parse(text.substring(47).slice(0, -2));
-    const rows = json?.table?.rows || [];
+    const fetchGViz = async (sheetId) => {
+      const res = await fetch(
+        `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json`
+      );
+      const text = await res.text();
+      const json = JSON.parse(text.substring(47).slice(0, -2));
+      return json?.table?.rows || [];
+    };
 
-    console.log(rows)
+    const incomingRows = await fetchGViz(INCOMING_SHEET);
+    const outgoingRows = await fetchGViz(OUTGOING_SHEET);
 
-    const formatted = rows.map((row, index) => ({
-      id: index,
-      time: row.c?.[0]?.v || "",
-      business_number: row.c?.[1]?.v || "",
-      customer: row.c?.[2]?.v?.toString().trim() || "",
-      content: row.c?.[3]?.v || "",
-      direction: row.c?.[4]?.v || "incoming"
-    }));
+    const parseRows = (rows) =>
+      rows.map((row, index) => ({
+        id: Math.random(),
+        time: row.c?.[0]?.v || "",
+        business_number: row.c?.[1]?.v || "",
+        customer: row.c?.[2]?.v?.toString().trim() || "",
+        content: row.c?.[3]?.v || "",
+        direction: row.c?.[4]?.v || "incoming"
+      }));
 
-    // DO NOT FILTER ANYTHING
-    formatted.sort(
+    const incomingData = parseRows(incomingRows);
+    const outgoingData = parseRows(outgoingRows);
+
+    const allMessages = [...incomingData, ...outgoingData];
+
+    allMessages.sort(
       (a, b) => new Date(a.time || 0) - new Date(b.time || 0)
     );
 
-    setMessages(formatted);
+    setMessages(allMessages);
 
     const uniqueCustomers = [
       ...new Set(
-        formatted
+        allMessages
           .map((m) => m.customer)
           .filter((c) => c && c !== "")
       )
     ];
-
-    console.log("CUSTOMERS AFTER FIX:", uniqueCustomers);
 
     setCustomers(uniqueCustomers);
 
