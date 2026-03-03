@@ -33,6 +33,8 @@ const fetchSheet = async () => {
     const json = JSON.parse(text.substring(47).slice(0, -2));
     const rows = json?.table?.rows || [];
 
+    console.log(rows)
+
     const formatted = rows.map((row, index) => ({
       id: index,
       time: row.c?.[0]?.v || "",
