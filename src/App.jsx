@@ -50,10 +50,42 @@ function App() {
     (msg) => msg.customer === selectedCustomer
   );
 
-  const handleSend = () => {
-    alert("Message sending logic Pipedream se connect karna hai.");
+  // const handleSend = () => {
+  //   alert("Message sending logic Pipedream se connect karna hai.");
+  //   setNewMessage("");
+  // };
+
+const handleSend = async () => {
+  if (!newMessage.trim()) return;
+
+  try {
+    await fetch("https://eocgwqbrg4pr9j9.m.pipedream.net", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        customer: selectedCustomer,
+        message: newMessage
+      })
+    });
+
     setNewMessage("");
-  };
+
+    // refresh messages after send
+    setTimeout(() => {
+      fetchSheet();
+    }, 1500);
+
+  } catch (err) {
+    console.error("Send error:", err);
+  }
+};
+
+  
+
+
+  
 
   return (
     <div style={{ display: "flex", height: "100vh" }}>
