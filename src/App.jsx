@@ -26,37 +26,40 @@ function App() {
 const fetchSheet = async () => {
   try {
     const res = await fetch(
-      `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Replies`
+      `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`
     );
 
     const text = await res.text();
     const json = JSON.parse(text.substring(47).slice(0, -2));
-    const rows = json.table.rows;
+    const rows = json?.table?.rows || [];
 
     const formatted = rows.map((row, index) => ({
       id: index,
       time: row.c?.[0]?.v || "",
       business_number: row.c?.[1]?.v || "",
-      customer: row.c?.[2]?.v?.toString().trim(),
+      customer: row.c?.[2]?.v?.toString().trim() || "",
       content: row.c?.[3]?.v || "",
       direction: row.c?.[4]?.v || "incoming"
     }));
 
+    // DO NOT FILTER ANYTHING
     formatted.sort(
-      (a, b) => new Date(a.time) - new Date(b.time)
+      (a, b) => new Date(a.time || 0) - new Date(b.time || 0)
     );
 
     setMessages(formatted);
 
     const uniqueCustomers = [
-      ...new Set(formatted.map((m) => m.customer))
+      ...new Set(
+        formatted
+          .map((m) => m.customer)
+          .filter((c) => c && c !== "")
+      )
     ];
 
-    setCustomers(uniqueCustomers);
+    console.log("CUSTOMERS AFTER FIX:", uniqueCustomers);
 
-    if (!selectedCustomer && uniqueCustomers.length > 0) {
-      setSelectedCustomer(uniqueCustomers[0]);
-    }
+    setCustomers(uniqueCustomers);
 
   } catch (err) {
     console.error("Sheet fetch error:", err);
