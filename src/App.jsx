@@ -26,68 +26,34 @@ function App() {
 const fetchSheet = async () => {
   try {
     const res = await fetch(
-      `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`
+      `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Replies`
     );
 
     const text = await res.text();
-
-    // remove gviz wrapper
     const json = JSON.parse(text.substring(47).slice(0, -2));
+    const rows = json.table.rows;
 
-    const rows = json?.table?.rows || [];
+    const formatted = rows.map((row, index) => ({
+      id: index,
+      time: row.c?.[0]?.v || "",
+      business_number: row.c?.[1]?.v || "",
+      customer: row.c?.[2]?.v?.toString().trim(),
+      content: row.c?.[3]?.v || "",
+      direction: row.c?.[4]?.v || "incoming"
+    }));
 
-    console.log("RAW ROW COUNT:", rows.length);
-
-    const formatted = rows
-      .map((row, index) => {
-        const time = row.c?.[0]?.v || "";
-        const business_number = row.c?.[1]?.v || "";
-        const customerRaw = row.c?.[2]?.v || "";
-        const content = row.c?.[3]?.v || "";
-        const direction = row.c?.[4]?.v || "incoming";
-
-        // normalize customer number
-        const customer = customerRaw
-          ?.toString()
-          .trim()
-          .replace(/\s/g, "");
-
-        return {
-          id: index,
-          time,
-          business_number,
-          customer,
-          content,
-          direction
-        };
-      })
-      // remove blank rows
-      .filter(
-        (m) =>
-          m.customer &&
-          m.content &&
-          m.customer !== "customer" // skip header row
-      );
-
-    console.log("VALID MESSAGE COUNT:", formatted.length);
-
-    // sort oldest → newest
     formatted.sort(
       (a, b) => new Date(a.time) - new Date(b.time)
     );
 
     setMessages(formatted);
 
-    // unique customers
     const uniqueCustomers = [
       ...new Set(formatted.map((m) => m.customer))
     ];
 
-    console.log("UNIQUE CUSTOMERS:", uniqueCustomers);
-
     setCustomers(uniqueCustomers);
 
-    // auto select first only if nothing selected
     if (!selectedCustomer && uniqueCustomers.length > 0) {
       setSelectedCustomer(uniqueCustomers[0]);
     }
