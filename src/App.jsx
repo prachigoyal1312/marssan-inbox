@@ -23,43 +23,79 @@ function App() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const fetchSheet = async () => {
-    try {
-      const res = await fetch(
-        `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`
+const fetchSheet = async () => {
+  try {
+    const res = await fetch(
+      `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`
+    );
+
+    const text = await res.text();
+
+    // remove gviz wrapper
+    const json = JSON.parse(text.substring(47).slice(0, -2));
+
+    const rows = json?.table?.rows || [];
+
+    console.log("RAW ROW COUNT:", rows.length);
+
+    const formatted = rows
+      .map((row, index) => {
+        const time = row.c?.[0]?.v || "";
+        const business_number = row.c?.[1]?.v || "";
+        const customerRaw = row.c?.[2]?.v || "";
+        const content = row.c?.[3]?.v || "";
+        const direction = row.c?.[4]?.v || "incoming";
+
+        // normalize customer number
+        const customer = customerRaw
+          ?.toString()
+          .trim()
+          .replace(/\s/g, "");
+
+        return {
+          id: index,
+          time,
+          business_number,
+          customer,
+          content,
+          direction
+        };
+      })
+      // remove blank rows
+      .filter(
+        (m) =>
+          m.customer &&
+          m.content &&
+          m.customer !== "customer" // skip header row
       );
 
-      const text = await res.text();
-      const json = JSON.parse(text.substring(47).slice(0, -2));
-      const rows = json.table.rows;
+    console.log("VALID MESSAGE COUNT:", formatted.length);
 
-      const formatted = rows.slice(1).map((row, index) => ({
-        id: index,
-        time: row.c[0]?.v || "",
-        business_number: row.c[1]?.v || "",
-        customer: row.c[2]?.v || "",
-        content: row.c[3]?.v || "",
-        direction: row.c[4]?.v || "incoming"
-      }));
+    // sort oldest → newest
+    formatted.sort(
+      (a, b) => new Date(a.time) - new Date(b.time)
+    );
 
-      formatted.sort((a, b) => new Date(a.time) - new Date(b.time));
+    setMessages(formatted);
 
-      setMessages(formatted);
+    // unique customers
+    const uniqueCustomers = [
+      ...new Set(formatted.map((m) => m.customer))
+    ];
 
-      const uniqueCustomers = [
-        ...new Set(formatted.map((m) => m.customer))
-      ];
+    console.log("UNIQUE CUSTOMERS:", uniqueCustomers);
 
-      setCustomers(uniqueCustomers);
+    setCustomers(uniqueCustomers);
 
-      if (!selectedCustomer && uniqueCustomers.length > 0) {
-        setSelectedCustomer(uniqueCustomers[0]);
-      }
-
-    } catch (err) {
-      console.error("Sheet fetch error:", err);
+    // auto select first only if nothing selected
+    if (!selectedCustomer && uniqueCustomers.length > 0) {
+      setSelectedCustomer(uniqueCustomers[0]);
     }
-  };
+
+  } catch (err) {
+    console.error("Sheet fetch error:", err);
+  }
+};
 
   const handleSend = async () => {
     if (!newMessage.trim() || !selectedCustomer) return;
