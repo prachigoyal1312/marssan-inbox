@@ -16,7 +16,6 @@ function App() {
 
   const chatEndRef = useRef(null);
 
-  // polling
   useEffect(() => {
 
     fetchSheet();
@@ -104,7 +103,6 @@ function App() {
 
       setMessages(allMessages);
 
-      // latest message per customer
       const latest = {};
 
       allMessages.forEach((msg) => {
@@ -123,18 +121,19 @@ function App() {
         .sort((a, b) => new Date(b.time) - new Date(a.time))
         .map((m) => m.customer);
 
-      // ⭐ important fix
+      // FIX 1: customers update only when changed
       setCustomers(prev => {
 
-        if (JSON.stringify(prev) === JSON.stringify(sortedCustomers)) {
+        const newList = [...new Set(sortedCustomers)];
+
+        if (JSON.stringify(prev) === JSON.stringify(newList)) {
           return prev;
         }
 
-        return sortedCustomers;
+        return newList;
 
       });
 
-      // unread logic
       const newUnread = { ...unread };
 
       allMessages.forEach((msg) => {
@@ -150,7 +149,7 @@ function App() {
 
       setUnread(newUnread);
 
-      // only first load select
+      // FIX 2: only first load selection
       if (!initialLoaded && sortedCustomers.length > 0) {
 
         setSelectedCustomer(sortedCustomers[0]);
@@ -209,10 +208,10 @@ function App() {
 
         <h2>Customers</h2>
 
-        {customers.map((cust) => (
+        {customers.map((cust, index) => (   // FIX 3: stable key
 
           <div
-            key={cust}
+            key={cust + index}
             className={
               cust === selectedCustomer
                 ? "customer active"
