@@ -179,3 +179,33 @@ body {
   border-radius: 20px;
   cursor: pointer;
 }
+
+.search-box{
+width:90%;
+margin:10px;
+padding:8px;
+border-radius:8px;
+border:1px solid #ccc;
+}
+
+.cust-number{
+font-weight:600;
+}
+
+.cust-preview{
+display:flex;
+justify-content:space-between;
+font-size:12px;
+color:gray;
+}
+
+.preview-text{
+max-width:120px;
+overflow:hidden;
+text-overflow:ellipsis;
+white-space:nowrap;
+}
+
+.preview-time{
+font-size:11px;
+}
