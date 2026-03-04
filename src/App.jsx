@@ -16,14 +16,14 @@ function App() {
 
   const chatEndRef = useRef(null);
 
-  // realtime polling
+  // polling
   useEffect(() => {
 
     fetchSheet();
 
     const interval = setInterval(() => {
       fetchSheet();
-    }, 2000);
+    }, 3000);
 
     return () => clearInterval(interval);
 
@@ -123,7 +123,16 @@ function App() {
         .sort((a, b) => new Date(b.time) - new Date(a.time))
         .map((m) => m.customer);
 
-      setCustomers(sortedCustomers);
+      // ⭐ important fix
+      setCustomers(prev => {
+
+        if (JSON.stringify(prev) === JSON.stringify(sortedCustomers)) {
+          return prev;
+        }
+
+        return sortedCustomers;
+
+      });
 
       // unread logic
       const newUnread = { ...unread };
@@ -141,7 +150,7 @@ function App() {
 
       setUnread(newUnread);
 
-      // ⭐ FIX: auto select only first load
+      // only first load select
       if (!initialLoaded && sortedCustomers.length > 0) {
 
         setSelectedCustomer(sortedCustomers[0]);
