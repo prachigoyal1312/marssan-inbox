@@ -70,7 +70,35 @@ const fetchSheet = async () => {
       )
     ];
 
-    setCustomers(uniqueCustomers);
+    //setCustomers(uniqueCustomers);
+
+    setMessages((prev) => {
+
+  const merged = [...prev];
+
+  formatted.forEach((msg) => {
+
+    const exists = merged.some(
+      (m) =>
+        m.time === msg.time &&
+        m.customer === msg.customer &&
+        m.content === msg.content
+    );
+
+    if (!exists) {
+      merged.push(msg);
+    }
+
+  });
+
+  merged.sort(
+    (a, b) => new Date(a.time) - new Date(b.time)
+  );
+
+  return merged;
+});
+
+    
 
   } catch (err) {
     console.error("Sheet fetch error:", err);
@@ -87,7 +115,7 @@ const fetchSheet = async () => {
       direction: "outgoing"
     };
 
-    setMessages((prev) => [...prev, tempMessage]);
+    
 
     try {
       await fetch(WEBHOOK_URL, {
