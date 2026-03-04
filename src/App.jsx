@@ -62,6 +62,8 @@ function App() {
       const incomingData = parseRows(incomingRows);
       const outgoingData = parseRows(outgoingRows);
 
+      console.log(outgoingRows);
+
       const allMessages = [...incomingData, ...outgoingData];
 
       allMessages.sort(
