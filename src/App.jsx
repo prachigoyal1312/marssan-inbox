@@ -42,7 +42,7 @@ const fetchSheet = async () => {
     const outgoingRows = await fetchGViz(OUTGOING_SHEET);
 
     const parseRows = (rows) =>
-      rows.map((row, index) => ({
+      rows.map((row) => ({
         id: Math.random(),
         time: row.c?.[0]?.v || "",
         business_number: row.c?.[1]?.v || "",
@@ -60,8 +60,34 @@ const fetchSheet = async () => {
       (a, b) => new Date(a.time || 0) - new Date(b.time || 0)
     );
 
-    setMessages(allMessages);
+    // ⭐ IMPORTANT FIX (MERGE INSTEAD OF OVERWRITE)
+    setMessages((prev) => {
 
+      const merged = [...prev];
+
+      allMessages.forEach((msg) => {
+
+        const exists = merged.some(
+          (m) =>
+            m.time === msg.time &&
+            m.customer === msg.customer &&
+            m.content === msg.content
+        );
+
+        if (!exists) {
+          merged.push(msg);
+        }
+
+      });
+
+      merged.sort(
+        (a, b) => new Date(a.time || 0) - new Date(b.time || 0)
+      );
+
+      return merged;
+    });
+
+    // customers list update
     const uniqueCustomers = [
       ...new Set(
         allMessages
@@ -71,7 +97,6 @@ const fetchSheet = async () => {
     ];
 
     setCustomers(uniqueCustomers);
-    
 
   } catch (err) {
     console.error("Sheet fetch error:", err);
