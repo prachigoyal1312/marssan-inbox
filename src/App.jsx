@@ -11,11 +11,21 @@ function App() {
   const [customers, setCustomers] = useState([]);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [newMessage, setNewMessage] = useState("");
+  const [unread, setUnread] = useState({});
 
   const chatEndRef = useRef(null);
 
+  // 🔹 realtime polling
   useEffect(() => {
+
     fetchSheet();
+
+    const interval = setInterval(() => {
+      fetchSheet();
+    }, 2000);
+
+    return () => clearInterval(interval);
+
   }, []);
 
   useEffect(() => {
@@ -62,8 +72,6 @@ function App() {
       const incomingData = parseRows(incomingRows);
       const outgoingData = parseRows(outgoingRows);
 
-      console.log(outgoingRows);
-
       const allMessages = [...incomingData, ...outgoingData];
 
       allMessages.sort(
@@ -72,18 +80,48 @@ function App() {
 
       setMessages(allMessages);
 
-      const uniqueCustomers = [
-        ...new Set(
-          allMessages
-            .map((m) => m.customer)
-            .filter((c) => c && c !== "")
-        )
-      ];
+      // 🔹 latest message per customer
+      const latestMessagePerCustomer = {};
 
-      setCustomers(uniqueCustomers);
+      allMessages.forEach(msg => {
 
-      if (!selectedCustomer && uniqueCustomers.length > 0) {
-        setSelectedCustomer(uniqueCustomers[0]);
+        if (!latestMessagePerCustomer[msg.customer]) {
+          latestMessagePerCustomer[msg.customer] = msg;
+        }
+
+        if (
+          new Date(msg.time) >
+          new Date(latestMessagePerCustomer[msg.customer].time)
+        ) {
+          latestMessagePerCustomer[msg.customer] = msg;
+        }
+
+      });
+
+      const sortedCustomers = Object.values(latestMessagePerCustomer)
+        .sort((a, b) => new Date(b.time) - new Date(a.time))
+        .map(m => m.customer);
+
+      setCustomers(sortedCustomers);
+
+      // 🔹 unread highlight logic
+      const newUnread = { ...unread };
+
+      allMessages.forEach(msg => {
+
+        if (
+          msg.customer !== selectedCustomer &&
+          msg.direction === "incoming"
+        ) {
+          newUnread[msg.customer] = true;
+        }
+
+      });
+
+      setUnread(newUnread);
+
+      if (!selectedCustomer && sortedCustomers.length > 0) {
+        setSelectedCustomer(sortedCustomers[0]);
       }
 
     } catch (err) {
@@ -113,7 +151,7 @@ function App() {
 
       setTimeout(() => {
         fetchSheet();
-      }, 2000);
+      }, 1500);
 
     } catch (err) {
       console.error("Send error:", err);
@@ -142,9 +180,14 @@ function App() {
             className={
               cust === selectedCustomer
                 ? "customer active"
+                : unread[cust]
+                ? "customer unread"
                 : "customer"
             }
-            onClick={() => setSelectedCustomer(cust)}
+            onClick={() => {
+              setSelectedCustomer(cust);
+              setUnread(prev => ({ ...prev, [cust]: false }));
+            }}
           >
             {cust}
           </div>
