@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import "./App.css";
 
 const INCOMING_SHEET = "14_FLPsuzbadnQyuS__itpVO2tHWUQcrHXuXOpY5K-4A";
-const OUTGOING_SHEET = "1vj6Xi6e9RJ6d5lpvg7TguzYe6cj0O3TlzFKgvdDSwNM";
+const OUTGOING_SHEET = "1EEVHr6IUVTv8e8kBHUiIIFusU49Bq-xenQl6wpZ-Ykk";
 const WEBHOOK_URL = "https://eocgwqbrg4pr9j9.m.pipedream.net";
 
 function App() {
