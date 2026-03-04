@@ -12,10 +12,11 @@ function App() {
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [newMessage, setNewMessage] = useState("");
   const [unread, setUnread] = useState({});
+  const [initialLoaded, setInitialLoaded] = useState(false);
 
   const chatEndRef = useRef(null);
 
-  // 🔹 realtime polling
+  // realtime polling
   useEffect(() => {
 
     fetchSheet();
@@ -33,52 +34,57 @@ function App() {
   }, [messages, selectedCustomer]);
 
   const normalizeNumber = (num) => {
+
     return String(num || "")
       .replace(".0", "")
       .replace(/\s/g, "")
       .trim();
+
   };
 
   const fetchGViz = async (sheetId) => {
+
     const res = await fetch(
       `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json`
     );
 
     const text = await res.text();
     const json = JSON.parse(text.substring(47).slice(0, -2));
+
     return json?.table?.rows || [];
+
   };
 
-const parseRows = (rows) => {
+  const parseRows = (rows) => {
 
-  return rows
-    .map((row) => {
+    return rows
+      .map((row) => {
 
-      const time = row.c?.[0]?.v || "";
-      const business = normalizeNumber(row.c?.[1]?.v);
-      const customer = normalizeNumber(row.c?.[2]?.v);
-      const content = row.c?.[3]?.v || "";
-      const direction = row.c?.[4]?.v || "incoming";
+        const time = row.c?.[0]?.v || "";
+        const business = normalizeNumber(row.c?.[1]?.v);
+        const customer = normalizeNumber(row.c?.[2]?.v);
+        const content = row.c?.[3]?.v || "";
+        const direction = row.c?.[4]?.v || "incoming";
 
-      return {
-        id: Math.random(),
-        time,
-        business_number: business,
-        customer,
-        content,
-        direction
-      };
+        return {
+          id: Math.random(),
+          time,
+          business_number: business,
+          customer,
+          content,
+          direction
+        };
 
-    })
-    .filter(
-      (m) =>
-        m.customer &&
-        m.customer !== "customer" &&
-        m.content &&
-        m.content !== "reply"
-    );
+      })
+      .filter(
+        (m) =>
+          m.customer &&
+          m.customer !== "customer" &&
+          m.content &&
+          m.content !== "reply"
+      );
 
-};
+  };
 
   const fetchSheet = async () => {
 
@@ -98,34 +104,31 @@ const parseRows = (rows) => {
 
       setMessages(allMessages);
 
-      // 🔹 latest message per customer
-      const latestMessagePerCustomer = {};
+      // latest message per customer
+      const latest = {};
 
-      allMessages.forEach(msg => {
+      allMessages.forEach((msg) => {
 
-        if (!latestMessagePerCustomer[msg.customer]) {
-          latestMessagePerCustomer[msg.customer] = msg;
+        if (!latest[msg.customer]) {
+          latest[msg.customer] = msg;
         }
 
-        if (
-          new Date(msg.time) >
-          new Date(latestMessagePerCustomer[msg.customer].time)
-        ) {
-          latestMessagePerCustomer[msg.customer] = msg;
+        if (new Date(msg.time) > new Date(latest[msg.customer].time)) {
+          latest[msg.customer] = msg;
         }
 
       });
 
-      const sortedCustomers = Object.values(latestMessagePerCustomer)
+      const sortedCustomers = Object.values(latest)
         .sort((a, b) => new Date(b.time) - new Date(a.time))
-        .map(m => m.customer);
+        .map((m) => m.customer);
 
       setCustomers(sortedCustomers);
 
-      // 🔹 unread highlight logic
+      // unread logic
       const newUnread = { ...unread };
 
-      allMessages.forEach(msg => {
+      allMessages.forEach((msg) => {
 
         if (
           msg.customer !== selectedCustomer &&
@@ -138,12 +141,18 @@ const parseRows = (rows) => {
 
       setUnread(newUnread);
 
-      if (!selectedCustomer && sortedCustomers.length > 0) {
+      // ⭐ FIX: auto select only first load
+      if (!initialLoaded && sortedCustomers.length > 0) {
+
         setSelectedCustomer(sortedCustomers[0]);
+        setInitialLoaded(true);
+
       }
 
     } catch (err) {
+
       console.error("Sheet fetch error:", err);
+
     }
 
   };
@@ -172,7 +181,9 @@ const parseRows = (rows) => {
       }, 1500);
 
     } catch (err) {
+
       console.error("Send error:", err);
+
     }
 
   };
@@ -184,8 +195,6 @@ const parseRows = (rows) => {
   return (
 
     <div className="container">
-
-      {/* Sidebar */}
 
       <div className="sidebar">
 
@@ -203,8 +212,14 @@ const parseRows = (rows) => {
                 : "customer"
             }
             onClick={() => {
+
               setSelectedCustomer(cust);
-              setUnread(prev => ({ ...prev, [cust]: false }));
+
+              setUnread(prev => ({
+                ...prev,
+                [cust]: false
+              }));
+
             }}
           >
             {cust}
@@ -213,8 +228,6 @@ const parseRows = (rows) => {
         ))}
 
       </div>
-
-      {/* Chat Section */}
 
       <div className="chat-section">
 
