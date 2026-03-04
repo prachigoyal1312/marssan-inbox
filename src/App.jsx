@@ -49,18 +49,36 @@ function App() {
     return json?.table?.rows || [];
   };
 
-  const parseRows = (rows) => {
+const parseRows = (rows) => {
 
-    return rows.map((row) => ({
-      id: Math.random(),
-      time: row.c?.[0]?.v || "",
-      business_number: normalizeNumber(row.c?.[1]?.v),
-      customer: normalizeNumber(row.c?.[2]?.v),
-      content: row.c?.[3]?.v || "",
-      direction: row.c?.[4]?.v || "incoming"
-    }));
+  return rows
+    .map((row) => {
 
-  };
+      const time = row.c?.[0]?.v || "";
+      const business = normalizeNumber(row.c?.[1]?.v);
+      const customer = normalizeNumber(row.c?.[2]?.v);
+      const content = row.c?.[3]?.v || "";
+      const direction = row.c?.[4]?.v || "incoming";
+
+      return {
+        id: Math.random(),
+        time,
+        business_number: business,
+        customer,
+        content,
+        direction
+      };
+
+    })
+    .filter(
+      (m) =>
+        m.customer &&
+        m.customer !== "customer" &&
+        m.content &&
+        m.content !== "reply"
+    );
+
+};
 
   const fetchSheet = async () => {
 
