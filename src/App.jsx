@@ -63,29 +63,29 @@ const fetchSheet = async () => {
     // ⭐ IMPORTANT FIX (MERGE INSTEAD OF OVERWRITE)
     setMessages((prev) => {
 
-      const merged = [...prev];
+  const merged = [...prev];
 
-      allMessages.forEach((msg) => {
+  allMessages.forEach((msg) => {
 
-        const exists = merged.some(
-          (m) =>
-            m.time === msg.time &&
-            m.customer === msg.customer &&
-            m.content === msg.content
-        );
+    const index = merged.findIndex(
+      (m) =>
+        m.customer === msg.customer &&
+        m.content === msg.content &&
+        m.direction === msg.direction
+    );
 
-        if (!exists) {
-          merged.push(msg);
-        }
+    if (index !== -1) {
+      merged[index] = { ...msg, pending: false };
+    } else {
+      merged.push(msg);
+    }
 
-      });
+  });
 
-      merged.sort(
-        (a, b) => new Date(a.time || 0) - new Date(b.time || 0)
-      );
+  merged.sort((a, b) => new Date(a.time) - new Date(b.time));
 
-      return merged;
-    });
+  return merged;
+});
 
     // customers list update
     const uniqueCustomers = [
@@ -103,16 +103,19 @@ const fetchSheet = async () => {
   }
 };
 
-  const handleSend = async () => {
+const handleSend = async () => {
 
   if (!newMessage.trim() || !selectedCustomer) return;
 
+  const tempId = Date.now();
+
   const tempMessage = {
-    id: Date.now(),
+    id: tempId,
     customer: selectedCustomer,
     content: newMessage,
     direction: "outgoing",
-    time: new Date().toISOString()
+    time: new Date().toISOString(),
+    pending: true
   };
 
   setMessages((prev) => [...prev, tempMessage]);
