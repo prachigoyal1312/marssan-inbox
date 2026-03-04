@@ -16,6 +16,9 @@ function App() {
 
   const chatEndRef = useRef(null);
 
+  const selectedCustomerRef = useRef(null);
+  const initialLoadedRef = useRef(false);
+
   useEffect(() => {
 
     fetchSheet();
@@ -31,6 +34,11 @@ function App() {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, selectedCustomer]);
+
+
+  useEffect(() => {
+  selectedCustomerRef.current = selectedCustomer;
+}, [selectedCustomer]);
 
   const normalizeNumber = (num) => {
 
@@ -139,23 +147,23 @@ function App() {
       allMessages.forEach((msg) => {
 
         if (
-          msg.customer !== selectedCustomer &&
-          msg.direction === "incoming"
-        ) {
-          newUnread[msg.customer] = true;
-        }
+      msg.customer !== selectedCustomerRef.current &&
+      msg.direction === "incoming"
+       ) {
+     newUnread[msg.customer] = true;
+       }
+  
 
       });
 
       setUnread(newUnread);
 
       // FIX 2: only first load selection
-      if (!initialLoaded && sortedCustomers.length > 0) {
 
-        setSelectedCustomer(sortedCustomers[0]);
-        setInitialLoaded(true);
-
-      }
+      if (!initialLoadedRef.current && sortedCustomers.length > 0) {
+      setSelectedCustomer(sortedCustomers[0]);
+      initialLoadedRef.current = true;
+        }
 
     } catch (err) {
 
@@ -219,16 +227,18 @@ function App() {
                 ? "customer unread"
                 : "customer"
             }
+
             onClick={() => {
 
-              setSelectedCustomer(cust);
+          setSelectedCustomer(cust);
+          selectedCustomerRef.current = cust;
 
-              setUnread(prev => ({
-                ...prev,
-                [cust]: false
-              }));
+          setUnread(prev => ({
+              ...prev,
+              [cust]: false
+               }));
 
-            }}
+                   }}
           >
             {cust}
           </div>
