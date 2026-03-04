@@ -12,10 +12,9 @@ function App() {
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [newMessage, setNewMessage] = useState("");
   const [unread, setUnread] = useState({});
-  const [initialLoaded, setInitialLoaded] = useState(false);
+  const [search, setSearch] = useState("");   // ⭐ search
 
   const chatEndRef = useRef(null);
-
   const selectedCustomerRef = useRef(null);
   const initialLoadedRef = useRef(false);
 
@@ -35,10 +34,9 @@ function App() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, selectedCustomer]);
 
-
   useEffect(() => {
-  selectedCustomerRef.current = selectedCustomer;
-}, [selectedCustomer]);
+    selectedCustomerRef.current = selectedCustomer;
+  }, [selectedCustomer]);
 
   const normalizeNumber = (num) => {
 
@@ -129,7 +127,6 @@ function App() {
         .sort((a, b) => new Date(b.time) - new Date(a.time))
         .map((m) => m.customer);
 
-      // FIX 1: customers update only when changed
       setCustomers(prev => {
 
         const newList = [...new Set(sortedCustomers)];
@@ -147,23 +144,20 @@ function App() {
       allMessages.forEach((msg) => {
 
         if (
-      msg.customer !== selectedCustomerRef.current &&
-      msg.direction === "incoming"
-       ) {
-     newUnread[msg.customer] = true;
-       }
-  
+          msg.customer !== selectedCustomerRef.current &&
+          msg.direction === "incoming"
+        ) {
+          newUnread[msg.customer] = true;
+        }
 
       });
 
       setUnread(newUnread);
 
-      // FIX 2: only first load selection
-
       if (!initialLoadedRef.current && sortedCustomers.length > 0) {
-      setSelectedCustomer(sortedCustomers[0]);
-      initialLoadedRef.current = true;
-        }
+        setSelectedCustomer(sortedCustomers[0]);
+        initialLoadedRef.current = true;
+      }
 
     } catch (err) {
 
@@ -208,6 +202,25 @@ function App() {
     (m) => normalizeNumber(m.customer) === normalizeNumber(selectedCustomer)
   );
 
+  // ⭐ search filter
+  const filteredCustomers = customers.filter(c =>
+    c.includes(search)
+  );
+
+  // ⭐ last message preview
+  const getLastMessage = (customer) => {
+    const msgs = messages.filter(m => m.customer === customer);
+    return msgs[msgs.length - 1];
+  };
+
+  const formatTime = (time) => {
+    if (!time) return "";
+    return new Date(time).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  };
+
   return (
 
     <div className="container">
@@ -216,34 +229,63 @@ function App() {
 
         <h2>Customers</h2>
 
-        {customers.map((cust, index) => (   // FIX 3: stable key
+        {/* ⭐ search */}
+        <input
+          className="search-box"
+          placeholder="Search number..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
 
-          <div
-            key={cust + index}
-            className={
-              cust === selectedCustomer
-                ? "customer active"
-                : unread[cust]
-                ? "customer unread"
-                : "customer"
-            }
+        {filteredCustomers.map((cust, index) => {
 
-            onClick={() => {
+          const lastMsg = getLastMessage(cust);
 
-          setSelectedCustomer(cust);
-          selectedCustomerRef.current = cust;
+          return (
 
-          setUnread(prev => ({
-              ...prev,
-              [cust]: false
-               }));
+            <div
+              key={cust + index}
+              className={
+                cust === selectedCustomer
+                  ? "customer active"
+                  : unread[cust]
+                  ? "customer unread"
+                  : "customer"
+              }
+              onClick={() => {
 
-                   }}
-          >
-            {cust}
-          </div>
+                setSelectedCustomer(cust);
+                selectedCustomerRef.current = cust;
 
-        ))}
+                setUnread(prev => ({
+                  ...prev,
+                  [cust]: false
+                }));
+
+              }}
+            >
+
+              <div className="cust-number">{cust}</div>
+
+              {lastMsg && (
+                <div className="cust-preview">
+
+                  <span className="preview-text">
+                    {lastMsg.content.slice(0, 30)}
+                  </span>
+
+                  <span className="preview-time">
+                    {formatTime(lastMsg.time)}
+                  </span>
+
+                </div>
+              )}
+
+            </div>
+
+          );
+
+        })}
 
       </div>
 
