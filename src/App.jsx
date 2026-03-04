@@ -70,34 +70,7 @@ const fetchSheet = async () => {
       )
     ];
 
-    //setCustomers(uniqueCustomers);
-
-    setMessages((prev) => {
-
-  const merged = [...prev];
-
-  formatted.forEach((msg) => {
-
-    const exists = merged.some(
-      (m) =>
-        m.time === msg.time &&
-        m.customer === msg.customer &&
-        m.content === msg.content
-    );
-
-    if (!exists) {
-      merged.push(msg);
-    }
-
-  });
-
-  merged.sort(
-    (a, b) => new Date(a.time) - new Date(b.time)
-  );
-
-  return merged;
-});
-
+    setCustomers(uniqueCustomers);
     
 
   } catch (err) {
@@ -106,39 +79,43 @@ const fetchSheet = async () => {
 };
 
   const handleSend = async () => {
-    if (!newMessage.trim() || !selectedCustomer) return;
 
-    const tempMessage = {
-      id: Date.now(),
-      customer: selectedCustomer,
-      content: newMessage,
-      direction: "outgoing"
-    };
+  if (!newMessage.trim() || !selectedCustomer) return;
 
-    
-
-    try {
-      await fetch(WEBHOOK_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          wa_id: selectedCustomer,
-          message: newMessage
-        })
-      });
-
-      setNewMessage("");
-
-      setTimeout(() => {
-        fetchSheet();
-      }, 1500);
-
-    } catch (err) {
-      console.error("Send error:", err);
-    }
+  const tempMessage = {
+    id: Date.now(),
+    customer: selectedCustomer,
+    content: newMessage,
+    direction: "outgoing",
+    time: new Date().toISOString()
   };
+
+  setMessages((prev) => [...prev, tempMessage]);
+
+  try {
+
+    await fetch(WEBHOOK_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        wa_id: selectedCustomer,
+        message: newMessage
+      })
+    });
+
+    setNewMessage("");
+
+    setTimeout(() => {
+      fetchSheet();
+    }, 2000);
+
+  } catch (err) {
+    console.error("Send error:", err);
+  }
+
+};
 
   const filteredMessages = messages.filter(
     (m) => m.customer === selectedCustomer
